@@ -1,52 +1,56 @@
-import { createContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
- export const CartContext = createContext();
 
- const CartContextProvider = ({children}) => {
-    const [cartList, setCartList] = useState([])
-    
-    const addToCart = (item, cantidad) => {
-        let foundItem = cartList.find(product => product.id === item.id);
-       
-        if (foundItem === undefined) {
-        
-        setCartList([...cartList, {
-            id: item.id,
-            name: item.name,
-            img: item.img,
-            brand: item.brand,
-            price: item.price,
-            cantidad: cantidad,
-        }])
-          } else {foundItem.cantidad += cantidad}
-            
-        }
+export const CartContext = createContext()
 
-        const removeItem = (id) => {
-            let newState = cartList.filter(item => item.id !== id)
-            setCartList(newState)
-        }
+export const useCartContext = () => {
+    return useContext(CartContext)
+}
 
-        const clearAll = () => {
-            setCartList([]);
-        }
+const init = JSON.parse(localStorage.getItem('cart')) || []
 
-        const cartBudge = () => {
-            let cantidadBadge = cartList.map(item => item.cantidad);
-            return cantidadBadge.reduce(((previusValue, currentValue) => previusValue + currentValue), 0) 
-        }
+export const CartProvider = ({children}) => {
+    const [cart, setCart] = useState(init)
 
-        const subTotal = () => { 
-            const compraTotal = cartList.reduce((acc, item) => (acc + item.price * item.cantidad), 0)      
-            return compraTotal;    
-        }
-    
+    const agregarAlCarrito = (item) => {
+      setCart([...cart, item])
+    }
+  
+    const removerItem = (id) => {
+      setCart( cart.filter(item => item.id !== id) )
+    }
+  
+    const isInCart = (id) => {
+      return cart.some(item => item.id === id)
+    }
+  
+    const emptycart = () => {
+      setCart([])
+    }
+  
+    const totalCart = () => {
+      return cart.reduce((acc, item) => acc + item.price * item.cantidad, 0)
+    }
+
+    const totalCantidad = () => {
+        return cart.reduce((acc, item) => acc + item.cantidad, 0)
+    }
+
+    useEffect(() => {
+      localStorage.setItem('cart', JSON.stringify(cart))
+    }, [cart])
+
     return (
-        <CartContext.Provider value={{cartList, addToCart, removeItem, clearAll, cartBudge,subTotal}}>
+        <CartContext.Provider value={{
+            cart,
+            agregarAlCarrito,
+            removerItem,
+            isInCart,
+            emptycart,
+            totalCart,
+            totalCantidad
+        }}>
             {children}
         </CartContext.Provider>
     )
- }
- 
- export default CartContextProvider;
-
+}
